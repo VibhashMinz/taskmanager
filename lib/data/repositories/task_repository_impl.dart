@@ -1,19 +1,33 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../domain/entities/task.dart';
 import '../../domain/repositories/task_repository.dart';
 import '../models/task_model.dart';
 import '../sources/local/task_local_data_source.dart';
-import '../sources/remote/tast_remote_data_source.dart';
+import '../sources/remote/task_remote_data_source.dart';
 
 class TaskRepositoryImpl implements TaskRepository {
   final TaskLocalDataSource localDataSource;
   final TaskRemoteDataSource remoteDataSource;
 
-  TaskRepositoryImpl({required this.localDataSource, required this.remoteDataSource});
+  TaskRepositoryImpl({
+    required this.localDataSource,
+    required this.remoteDataSource,
+  });
+
+  /// ✅ Fetch user ID from SharedPreferences
+  Future<String?> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_id');
+  }
 
   @override
   Future<List<Task>> getTasks() async {
     try {
-      final remoteTasks = await remoteDataSource.getTasks();
+      final userId = await _getUserId();
+      if (userId == null) return []; // If no user is logged in, return empty list.
+
+      final remoteTasks = await remoteDataSource.getTasks(userId);
       await localDataSource.cacheTasks(remoteTasks);
       return remoteTasks;
     } catch (e) {
@@ -23,21 +37,34 @@ class TaskRepositoryImpl implements TaskRepository {
 
   @override
   Future<void> addTask(Task task) async {
-    final taskModel = TaskModel.fromEntity(task);
+    final userId = await _getUserId();
+    if (userId == null) return; // Prevent adding task if user is not logged in.
+
+    final taskWithUserId = task.copyWith(userId: userId);
+    final taskModel = TaskModel.fromEntity(taskWithUserId);
+
     await localDataSource.addTask(taskModel);
     await remoteDataSource.addTask(taskModel);
   }
 
   @override
   Future<void> updateTask(Task task) async {
-    final taskModel = TaskModel.fromEntity(task);
+    final userId = await _getUserId();
+    if (userId == null) return;
+
+    final taskWithUserId = task.copyWith(userId: userId);
+    final taskModel = TaskModel.fromEntity(taskWithUserId);
+
     await localDataSource.updateTask(taskModel);
     await remoteDataSource.updateTask(taskModel);
   }
 
   @override
-  Future<void> deleteTask(String id) async {
-    await localDataSource.deleteTask(id);
-    await remoteDataSource.deleteTask(id);
+  Future<void> deleteTask(String taskId) async {
+    final userId = await _getUserId();
+    if (userId == null) return;
+
+    await localDataSource.deleteTask(taskId);
+    await remoteDataSource.deleteTask(userId, taskId); // ✅ Pass both userId & taskId
   }
 }

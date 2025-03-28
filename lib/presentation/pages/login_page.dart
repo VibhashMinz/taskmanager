@@ -23,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
           if (state.user != null) {
             Navigator.pushReplacementNamed(context, AppRouter.taskList);
           }
+
           if (state.error != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error!)),
@@ -47,11 +48,23 @@ class _LoginPageState extends State<LoginPage> {
                   child: const Text("Login"),
                 ),
                 const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<AuthCubit>().signInWithGoogle();
+                BlocBuilder<AuthCubit, AuthState>(
+                  builder: (context, state) {
+                    if (state.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (state.error != null) {
+                      return Text(state.error!, style: TextStyle(color: Colors.red));
+                    }
+
+                    return ElevatedButton(
+                      onPressed: () {
+                        context.read<AuthCubit>().signInWithGoogle();
+                      },
+                      child: const Text('Sign in with Google'),
+                    );
                   },
-                  child: const Text("Sign in with Google"),
                 ),
                 const SizedBox(height: 10),
                 TextButton(

@@ -12,7 +12,7 @@ import 'package:taskmanager/presentation/blocs/auth_cubit.dart';
 //task
 import 'package:taskmanager/data/repositories/task_repository_impl.dart';
 import 'package:taskmanager/data/sources/local/task_local_data_source.dart';
-import 'package:taskmanager/data/sources/remote/tast_remote_data_source.dart';
+import 'package:taskmanager/data/sources/remote/task_remote_data_source.dart';
 import 'package:taskmanager/domain/repositories/task_repository.dart';
 import 'package:taskmanager/presentation/blocs/task_bloc.dart';
 

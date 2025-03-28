@@ -27,6 +27,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       final newTask = Task(
         id: const Uuid().v4(),
         title: _titleController.text,
+        userId: '',
       );
       context.read<TaskBloc>().add(AddTask(newTask));
       Navigator.pop(context); // Navigate back after adding

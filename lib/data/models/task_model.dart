@@ -17,16 +17,22 @@ class TaskModel extends Task {
   @HiveField(2)
   final bool isCompleted;
 
+  @override
+  @HiveField(3) // ✅ Add userId to Hive storage
+  final String userId;
+
   TaskModel({
     required this.id,
     required this.title,
+    required this.userId,
     this.isCompleted = false,
-  }) : super(id: id, title: title, isCompleted: isCompleted);
+  }) : super(id: id, title: title, userId: userId, isCompleted: isCompleted);
 
   /// ✅ Convert JSON to TaskModel (for SQLite & Firebase)
   factory TaskModel.fromJson(Map<String, dynamic> json) => TaskModel(
         id: json['id'],
         title: json['title'],
+        userId: json['userId'],
         isCompleted: json['isCompleted'] == 1 ? true : false,
       );
 
@@ -34,6 +40,7 @@ class TaskModel extends Task {
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
+        'userId': userId,
         'isCompleted': isCompleted ? 1 : 0,
       };
 
@@ -41,6 +48,7 @@ class TaskModel extends Task {
   factory TaskModel.fromEntity(Task task) => TaskModel(
         id: task.id,
         title: task.title,
+        userId: task.userId,
         isCompleted: task.isCompleted,
       );
 
@@ -48,6 +56,7 @@ class TaskModel extends Task {
   Task toEntity() => Task(
         id: id,
         title: title,
+        userId: userId,
         isCompleted: isCompleted,
       );
 }
