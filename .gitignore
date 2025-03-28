@@ -34,7 +34,7 @@ migrate_working_dir/
 .pub/
 /build/
 
-# Symbolication related
+# Symbolication relatedclear
 app.*.symbols
 
 # Obfuscation related

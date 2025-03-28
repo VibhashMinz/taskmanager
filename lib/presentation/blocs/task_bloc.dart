@@ -28,14 +28,6 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     }
   }
 
-  // Future<void> _onAddTask(AddTask event, Emitter<TaskState> emit) async {
-  //   try {
-  //     await repository.addTask(event.task);
-  //     add(LoadTasks());
-  //   } catch (e) {
-  //     emit(TaskError('Failed to add task'));
-  //   }
-  // }
   Future<void> _onAddTask(AddTask event, Emitter<TaskState> emit) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -46,29 +38,45 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         return;
       }
 
-      final newTask = event.task.copyWith(userId: userId); // ✅ Inject userId
+      final newTask = event.task.copyWith(userId: userId);
       await repository.addTask(newTask);
-      add(LoadTasks()); // Reload tasks
+      add(LoadTasks());
     } catch (e) {
       emit(TaskError('Failed to add task'));
     }
   }
 
   Future<void> _onUpdateTask(UpdateTask event, Emitter<TaskState> emit) async {
-    try {
-      await repository.updateTask(event.task);
-      add(LoadTasks());
-    } catch (e) {
-      emit(TaskError('Failed to update task'));
+    if (state is TaskLoaded) {
+      final currentState = state as TaskLoaded;
+      final updatedTasks = currentState.tasks.map((task) {
+        return task.id == event.task.id ? event.task : task;
+      }).toList();
+
+      emit(TaskLoaded(updatedTasks));
+
+      try {
+        await repository.updateTask(event.task);
+      } catch (e) {
+        emit(TaskLoaded(currentState.tasks));
+        emit(TaskError('Failed to update task'));
+      }
     }
   }
 
   Future<void> _onDeleteTask(DeleteTask event, Emitter<TaskState> emit) async {
-    try {
-      await repository.deleteTask(event.id);
-      add(LoadTasks());
-    } catch (e) {
-      emit(TaskError('Failed to delete task'));
+    if (state is TaskLoaded) {
+      final currentState = state as TaskLoaded;
+      final updatedTasks = currentState.tasks.where((task) => task.id != event.id).toList();
+
+      emit(TaskLoaded(updatedTasks));
+
+      try {
+        await repository.deleteTask(event.id);
+      } catch (e) {
+        emit(TaskLoaded(currentState.tasks));
+        emit(TaskError('Failed to delete task'));
+      }
     }
   }
 }

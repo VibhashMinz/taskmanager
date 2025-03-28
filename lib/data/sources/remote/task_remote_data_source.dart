@@ -15,11 +15,14 @@ class FirebaseTaskRemoteDataSource implements TaskRemoteDataSource {
 
   FirebaseTaskRemoteDataSource({required this.firestore});
 
-  /// ✅ Fetch only the logged-in user's tasks
   @override
   Future<List<TaskModel>> getTasks(String userId) async {
     try {
-      var snapshot = await firestore.collection('users').doc(userId).collection('tasks').get();
+      var snapshot = await firestore
+          .collection('tasks')
+          .where('userId', isEqualTo: userId) // ✅ Fetch only user's tasks
+          .orderBy('createdAt', descending: true)
+          .get();
 
       if (snapshot.docs.isEmpty) {
         log("No tasks found for user: $userId");
@@ -33,7 +36,6 @@ class FirebaseTaskRemoteDataSource implements TaskRemoteDataSource {
     }
   }
 
-  /// ✅ Add task under the user's document
   @override
   Future<void> addTask(TaskModel task) async {
     try {
@@ -42,7 +44,7 @@ class FirebaseTaskRemoteDataSource implements TaskRemoteDataSource {
         throw Exception("Task ID and userId are required");
       }
 
-      await firestore.collection('users').doc(task.userId).collection('tasks').doc(task.id).set(task.toJson());
+      await firestore.collection('tasks').doc(task.id).set(task.toJson());
 
       log("Task added successfully: ${task.id}");
     } catch (e) {
@@ -60,7 +62,7 @@ class FirebaseTaskRemoteDataSource implements TaskRemoteDataSource {
         throw Exception("Task ID and userId are required");
       }
 
-      await firestore.collection('users').doc(task.userId).collection('tasks').doc(task.id).update(task.toJson());
+      await firestore.collection('tasks').doc(task.id).update(task.toJson());
 
       log("Task updated successfully: ${task.id}");
     } catch (e) {
@@ -69,16 +71,15 @@ class FirebaseTaskRemoteDataSource implements TaskRemoteDataSource {
     }
   }
 
-  /// ✅ Delete task from the user's document
   @override
   Future<void> deleteTask(String userId, String taskId) async {
     try {
-      if (taskId.isEmpty || userId.isEmpty) {
-        log("Task ID or userId is missing for deletion!");
-        throw Exception("Task ID and userId are required");
+      if (taskId.isEmpty) {
+        log("Task ID is missing for deletion!");
+        throw Exception("Task ID is required");
       }
 
-      await firestore.collection('users').doc(userId).collection('tasks').doc(taskId).delete();
+      await firestore.collection('tasks').doc(taskId).delete();
 
       log("Task deleted successfully: $taskId");
     } catch (e) {

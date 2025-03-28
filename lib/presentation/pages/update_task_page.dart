@@ -15,22 +15,29 @@ class UpdateTaskPage extends StatefulWidget {
 
 class _UpdateTaskPageState extends State<UpdateTaskPage> {
   late TextEditingController _titleController;
+  late TextEditingController _descriptionController;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.task.title);
+    _descriptionController = TextEditingController(text: widget.task.description);
   }
 
   @override
   void dispose() {
     _titleController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
   void _updateTask() {
     if (_titleController.text.isNotEmpty) {
-      final updatedTask = widget.task.copyWith(title: _titleController.text);
+      final updatedTask = widget.task.copyWith(
+        title: _titleController.text,
+        description: _descriptionController.text,
+        updatedAt: DateTime.now(),
+      );
       context.read<TaskBloc>().add(UpdateTask(updatedTask));
       Navigator.pop(context); // Navigate back after updating
     }
@@ -40,13 +47,26 @@ class _UpdateTaskPageState extends State<UpdateTaskPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Update Task')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Task Title'),
+              decoration: const InputDecoration(
+                labelText: 'Task Title',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 5,
             ),
             const SizedBox(height: 20),
             ElevatedButton(

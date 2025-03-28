@@ -53,26 +53,38 @@ class CustomTextField extends StatelessWidget {
       return validator!(value);
     }
 
-    // Apply built-in validators based on type
     switch (type) {
       case TextFieldType.email:
-        // Email validation pattern
         final emailPattern = RegExp(
           r'^[a-zA-Z0-9.!#$%&*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$',
         );
         if (!emailPattern.hasMatch(value)) {
           return 'Please enter a valid email address';
         }
+
         // Check for common typos in domain names
         final lowerValue = value.toLowerCase();
-        if (lowerValue.contains('gmail.comm') || lowerValue.contains('gmail.con') || lowerValue.contains('gmail.cm') || lowerValue.contains('gmail.co')) {
-          return 'Did you mean gmail.com?';
-        }
-        if (lowerValue.contains('yahoo.comm') || lowerValue.contains('yahoo.con') || lowerValue.contains('yahoo.cm') || lowerValue.contains('yahoo.co')) {
-          return 'Did you mean yahoo.com?';
-        }
-        if (lowerValue.contains('hotmail.comm') || lowerValue.contains('hotmail.con') || lowerValue.contains('hotmail.cm') || lowerValue.contains('hotmail.co')) {
-          return 'Did you mean hotmail.com?';
+        final commonTypos = {
+          'gmail.comm': 'gmail.com',
+          'gmail.con': 'gmail.com',
+          'gmail.cm': 'gmail.com',
+          'gmail.co': 'gmail.com',
+          'yahoo.comm': 'yahoo.com',
+          'yahoo.con': 'yahoo.com',
+          'yahoo.cm': 'yahoo.com',
+          'yahoo.co': 'yahoo.com',
+          'hotmail.comm': 'hotmail.com',
+          'hotmail.con': 'hotmail.com',
+          'hotmail.cm': 'hotmail.com',
+          'hotmail.co': 'hotmail.com',
+        };
+
+        final parts = lowerValue.split('@');
+        if (parts.length == 2) {
+          final domain = parts[1];
+          if (commonTypos.containsKey(domain)) {
+            return 'Did you mean ${commonTypos[domain]}?';
+          }
         }
         break;
 
@@ -89,10 +101,10 @@ class CustomTextField extends StatelessWidget {
         if (!RegExp(r'[0-9]').hasMatch(value)) {
           return 'Password must contain at least one number';
         }
-        if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
-          return 'Password must contain at least one special character (!@#\$%^&*(),.?":{}|<>)';
+        if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(value)) {
+          return 'Password must contain at least one special character';
         }
-        // Check for common weak passwords
+
         final lowerValue = value.toLowerCase();
         if (lowerValue == 'password123' || lowerValue == '12345678' || lowerValue == 'qwerty123' || lowerValue == 'admin123') {
           return 'This is a common password. Please choose a stronger one';
@@ -100,19 +112,9 @@ class CustomTextField extends StatelessWidget {
         break;
 
       case TextFieldType.name:
-        // Name validation pattern
         final namePattern = RegExp(r"^[A-Za-z][A-Za-z\s'-]*[A-Za-z]$");
         if (!namePattern.hasMatch(value)) {
-          return 'Name can only contain letters, spaces, hyphens, and apostrophes. Must start and end with a letter';
-        }
-        if (RegExp(r'\s{2,}').hasMatch(value)) {
-          return 'Name cannot contain consecutive spaces';
-        }
-        if (RegExp(r'-{2,}').hasMatch(value)) {
-          return 'Name cannot contain consecutive hyphens';
-        }
-        if (RegExp(r"'{2,}").hasMatch(value)) {
-          return 'Name cannot contain consecutive apostrophes';
+          return 'Invalid name format';
         }
         if (value.length < 2) {
           return 'Name is too short';
@@ -123,15 +125,9 @@ class CustomTextField extends StatelessWidget {
         break;
 
       case TextFieldType.phone:
-        // Phone validation pattern
-        final phonePattern = RegExp(r'^\+?[\d\s-]{10,}$');
+        final phonePattern = RegExp(r'^\+?[0-9]{10,}$');
         if (!phonePattern.hasMatch(value)) {
           return 'Please enter a valid phone number';
-        }
-        // Remove all non-digit characters and check length
-        final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
-        if (digitsOnly.length < 10) {
-          return 'Phone number must contain at least 10 digits';
         }
         break;
 
@@ -142,16 +138,13 @@ class CustomTextField extends StatelessWidget {
         break;
 
       case TextFieldType.text:
-        // No specific validation for text type
         break;
     }
 
-    // Check minimum length if specified
     if (minLength != null && value.length < minLength!) {
       return '$labelText must be at least $minLength characters';
     }
 
-    // Check maximum length if specified
     if (maxLength != null && value.length > maxLength!) {
       return '$labelText must not exceed $maxLength characters';
     }
@@ -168,7 +161,6 @@ class CustomTextField extends StatelessWidget {
       validator: _validateField,
       maxLines: maxLines,
       maxLength: maxLength,
-      style: Theme.of(context).textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: isRequired ? "$labelText *" : labelText,
         hintText: hintText,
@@ -179,31 +171,9 @@ class CustomTextField extends StatelessWidget {
                 onPressed: onSuffixPressed,
               )
             : null,
-        filled: true,
-        fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.primary,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.error,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        labelStyle: TextStyle(color: Colors.grey[600]),
       ),
     );
   }
@@ -216,9 +186,7 @@ class CustomTextField extends StatelessWidget {
         return TextInputType.phone;
       case TextFieldType.number:
         return TextInputType.number;
-      case TextFieldType.text:
-      case TextFieldType.name:
-      case TextFieldType.password:
+      default:
         return TextInputType.text;
     }
   }
