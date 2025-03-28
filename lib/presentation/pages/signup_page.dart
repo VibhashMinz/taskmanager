@@ -29,7 +29,6 @@ class _SignupPageState extends State<SignupPage> {
           if (state.user != null) {
             Navigator.pushReplacementNamed(context, AppRouter.taskList);
           }
-
           if (state.error != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error!)),
