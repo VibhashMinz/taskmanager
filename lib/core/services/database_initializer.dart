@@ -34,7 +34,15 @@ class DatabaseInitializer {
       version: 1,
       onCreate: (db, version) async {
         await db.execute(
-          "CREATE TABLE tasks(id TEXT PRIMARY KEY, title TEXT, isCompleted INTEGER)",
+          """CREATE TABLE tasks(
+            id TEXT PRIMARY KEY, 
+            title TEXT, 
+            description TEXT,
+            isCompleted INTEGER,
+            userId TEXT,
+            createdAt INTEGER,
+            updatedAt INTEGER
+          )""",
         );
       },
     );
