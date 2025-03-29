@@ -39,9 +39,22 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       }
 
       final newTask = event.task.copyWith(userId: userId);
+
+      // Optimistically add the task to the current state
+      if (state is TaskLoaded) {
+        final currentState = state as TaskLoaded;
+        final updatedTasks = [...currentState.tasks, newTask];
+        emit(TaskLoaded(updatedTasks));
+      }
+
+      // Add task to repository
       await repository.addTask(newTask);
-      add(LoadTasks());
     } catch (e) {
+      // If add fails, revert to original state
+      if (state is TaskLoaded) {
+        final currentState = state as TaskLoaded;
+        emit(TaskLoaded(currentState.tasks));
+      }
       emit(TaskError('Failed to add task'));
     }
   }
@@ -53,11 +66,14 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         return task.id == event.task.id ? event.task : task;
       }).toList();
 
+      // Immediately emit new state with updated task
       emit(TaskLoaded(updatedTasks));
 
       try {
+        // Update in repository
         await repository.updateTask(event.task);
       } catch (e) {
+        // If update fails, revert to original state
         emit(TaskLoaded(currentState.tasks));
         emit(TaskError('Failed to update task'));
       }
@@ -69,11 +85,13 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       final currentState = state as TaskLoaded;
       final updatedTasks = currentState.tasks.where((task) => task.id != event.id).toList();
 
+      // Immediately emit new state without the deleted task
       emit(TaskLoaded(updatedTasks));
 
       try {
         await repository.deleteTask(event.id);
       } catch (e) {
+        // If delete fails, revert to original state
         emit(TaskLoaded(currentState.tasks));
         emit(TaskError('Failed to delete task'));
       }
