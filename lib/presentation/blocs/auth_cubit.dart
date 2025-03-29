@@ -47,11 +47,25 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final user = await signInWithGoogleUseCase();
       if (user != null) {
-        await _saveUserId(user.uid); // Save user ID
+        await _saveUserId(user.uid);
+        emit(AuthState(user: user));
+      } else {
+        emit(AuthState(error: 'Google Sign-In was cancelled'));
       }
-      emit(AuthState(user: user));
     } catch (e) {
-      emit(AuthState(error: e.toString()));
+      String errorMessage = 'An error occurred during Google Sign-In';
+      if (e.toString().contains('cancelled by the user')) {
+        errorMessage = 'Sign-In was cancelled';
+      } else if (e.toString().contains('account already exists')) {
+        errorMessage = 'An account already exists with this email. Please sign in with your existing method.';
+      } else if (e.toString().contains('not enabled')) {
+        errorMessage = 'Google Sign-In is not enabled for this app';
+      } else if (e.toString().contains('user-disabled')) {
+        errorMessage = 'This account has been disabled';
+      } else if (e.toString().contains('invalid-credential')) {
+        errorMessage = 'Invalid Google Sign-In credentials';
+      }
+      emit(AuthState(error: errorMessage));
     }
   }
 

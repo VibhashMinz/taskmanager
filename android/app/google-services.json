@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "793644076597-jon1qec55itimpehqurri9g86jsud0pf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.vgm.taskmanager",
+            "certificate_hash": "63544dc35088872b0a81e5dc2085d3370402319a"
+          }
+        },
+        {
           "client_id": "793644076597-mjbcgt0bn7fb0bv4s70pvdbifam3b416.apps.googleusercontent.com",
           "client_type": 3
         }

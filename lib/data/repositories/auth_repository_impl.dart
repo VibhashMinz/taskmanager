@@ -17,24 +17,54 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<UserEntity?> signInWithGoogle() async {
-    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) return null;
+    try {
+      await _googleSignIn.signOut();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        throw Exception('Google Sign-In was cancelled by the user');
+      }
 
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        throw Exception('Failed to get Google authentication tokens');
+      }
 
-    final UserCredential userCredential = await _firebaseAuth.signInWithCredential(credential);
-    final User? firebaseUser = userCredential.user;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
-    if (firebaseUser != null) {
+      final UserCredential userCredential = await _firebaseAuth.signInWithCredential(credential);
+      final User? firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        throw Exception('Failed to get Firebase user after Google Sign-In');
+      }
+
       // Save user to Firestore
       await _saveUserToFirestore(firebaseUser);
-    }
 
-    return _userFromFirebase(firebaseUser);
+      return _userFromFirebase(firebaseUser);
+    } on FirebaseAuthException catch (e) {
+      log("🔥 FirebaseAuthException: ${e.code} - ${e.message}");
+
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          throw Exception('An account already exists with the same email address but different sign-in credentials');
+        case 'invalid-credential':
+          throw Exception('Invalid Google Sign-In credentials');
+        case 'operation-not-allowed':
+          throw Exception('Google Sign-In is not enabled for this project');
+        case 'user-disabled':
+          throw Exception('This user account has been disabled');
+        default:
+          throw Exception('Firebase authentication error: ${e.message}');
+      }
+    } on Exception catch (e) {
+      log("❌ Google Sign-In Error: ${e.toString()}");
+
+      throw Exception('Google Sign-In failed: ${e.toString()}');
+    }
   }
 
   @override
